@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteTrip Core - SaaS Admin Dashboard</title>
+    
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js untuk Purchase Intelligence -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857', 900: '#064e3b' },
+                        sidebar: '#0f172a' // Slate 900
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar untuk Web */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .page-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .page-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .nav-item.active { background-color: rgba(255, 255, 255, 0.1); color: #34d399; border-left: 4px solid #34d399; }
+        .nav-item { border-left: 4px solid transparent; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden antialiased">
+
+    <!-- ============================================== -->
+    <!-- SIDEBAR (LEFT NAVIGATION)                      -->
+    <!-- ============================================== -->
+    <aside class="w-64 bg-sidebar text-slate-300 flex flex-col shrink-0 transition-all duration-300 z-20 hidden md:flex">
+        <!-- Logo Area -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-800/50 bg-slate-900">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary-500/30">B</div>
+                <span class="text-white text-lg font-bold tracking-wide">ByteTrip<span class="text-primary-400 font-medium">Core</span></span>
+            </div>
+        </div>
+
+        <!-- Menu Navigation -->
+        <nav class="flex-1 overflow-y-auto py-6 flex flex-col gap-1 px-3">
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Main Menu</p>
+            
+            <button onclick="switchPage('dasbor', this)" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 hover:text-white transition-colors w-full text-left">
+                <i class="fas fa-chart-pie w-5 text-center text-lg"></i>
+                <span class="font-medium text-sm">Dashboard Analytics</span>
+            </button>
+            
+            <button onclick="switchPage('intelligence', this)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 hover:text-white transition-colors w-full text-left">
+                <i class="fas fa-brain w-5 text-center text-lg text-amber-400"></i>
+                <span class="font-medium text-sm text-white">Purchase Intelligence</span>
+            </button>
+
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Manajemen & CRM</p>
+
+            <button onclick="switchPage('agen', this)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 hover:text-white transition-colors w-full text-left flex justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-network-wired w-5 text-center text-lg"></i>
+                    <span class="font-medium text-sm">Sales Agent</span>
+                </div>
+                <span class="bg-primary-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">24</span>
+            </button>
+            
+            <button onclick="switchPage('customer', this)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 hover:text-white transition-colors w-full text-left">
+                <i class="fas fa-users w-5 text-center text-lg"></i>
+                <span class="font-medium text-sm">Data Jamaah (CRM)</span>
+            </button>
+
+            <button onclick="switchPage('paket', this)" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 hover:text-white transition-colors w-full text-left">
+                <i class="fas fa-box-open w-5 text-center text-lg"></i>
+                <span class="font-medium text-sm">Paket Travel</span>
+            </button>
+
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Sistem</p>
+
+            <button class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 hover:text-white transition-colors w-full text-left">
+                <i class="fas fa-plug w-5 text-center text-lg"></i>
+                <span class="font-medium text-sm">Integrasi (Odoo)</span>
+            </button>
+            <button class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 hover:text-white transition-colors w-full text-left">
+                <i class="fas fa-cog w-5 text-center text-lg"></i>
+                <span class="font-medium text-sm">Pengaturan</span>
+            </button>
+        </nav>
+
+        <!-- User Profile (Bottom Sidebar) -->
+        <div class="p-4 border-t border-slate-800/50">
+            <div class="flex items-center gap-3 bg-slate-800/50 p-3 rounded-xl border border-slate-700">
+                <img src="https://placehold.co/100x100/10b981/ffffff?text=AD" class="w-10 h-10 rounded-lg">
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-sm font-bold text-white truncate">Admin SJG</p>
+                    <p class="text-[11px] text-slate-400 truncate">SJG Travel Umroh</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============================================== -->
+    <!-- MAIN CONTENT AREA                              -->
+    <!-- ============================================== -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative">
+        
+        <!-- TOPBAR -->
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 shrink-0 z-10 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden text-slate-500 hover:text-slate-800"><i class="fas fa-bars text-xl"></i></button>
+                <div class="relative hidden sm:block">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" placeholder="Cari agen, jamaah, atau invoice..." class="pl-10 pr-4 py-2 bg-slate-100 border-transparent rounded-lg text-sm focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none w-80 transition-all">
+                </div>
+            </div>
+            <div class="flex items-center gap-5">
+                <button class="relative text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                </button>
+                <div class="h-6 w-px bg-slate-200"></div>
+                <button class="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary-600 transition-colors">
+                    <span>Odoo Sync: <span class="text-emerald-500">Connected</span></span>
+                    <i class="fas fa-check-circle text-emerald-500"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT CONTAINER (SCROLLABLE) -->
+        <div class="flex-1 overflow-y-auto p-6 md:p-8 scroll-smooth">
+            
+            <!-- ========================================== -->
+            <!-- 1. PAGE: DASHBOARD                         -->
+            <!-- ========================================== -->
+            <div id="page-dasbor" class="page-content active max-w-7xl mx-auto">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Dashboard Executive</h1>
+                        <p class="text-sm text-slate-500 mt-1">Ringkasan performa penjualan dan operasional travel.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <select class="bg-white border border-slate-300 text-sm rounded-lg px-4 py-2 focus:outline-none focus:border-primary-500 font-medium">
+                            <option>Bulan Ini (Okt 2026)</option>
+                            <option>Bulan Lalu</option>
+                            <option>Tahun 2026</option>
+                        </select>
+                        <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors flex items-center gap-2">
+                            <i class="fas fa-download"></i> Export Laporan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- Card 1 -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="text-sm font-semibold text-slate-500">Total Omset Penjualan</p>
+                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fas fa-wallet"></i></div>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">Rp 4.250.000.000</h3>
+                        <p class="text-xs font-bold text-emerald-500 flex items-center gap-1"><i class="fas fa-arrow-up"></i> +12.5% <span class="text-slate-400 font-normal">vs bulan lalu</span></p>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="text-sm font-semibold text-slate-500">Total Jamaah Closing</p>
+                            <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fas fa-users"></i></div>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">145 Pax</h3>
+                        <p class="text-xs font-bold text-emerald-500 flex items-center gap-1"><i class="fas fa-arrow-up"></i> +8.2% <span class="text-slate-400 font-normal">vs bulan lalu</span></p>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="text-sm font-semibold text-slate-500">Sales Agent Aktif</p>
+                            <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fas fa-user-tie"></i></div>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">24 Agen</h3>
+                        <p class="text-xs font-bold text-emerald-500 flex items-center gap-1"><i class="fas fa-arrow-up"></i> +2 Agen Baru</p>
+                    </div>
+                    <!-- Card 4 -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-start mb-2">
+                            <p class="text-sm font-semibold text-slate-500">Komisi Dibagikan</p>
+                            <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fas fa-hand-holding-usd"></i></div>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">Rp 125.000.000</h3>
+                        <p class="text-xs font-bold text-slate-400 flex items-center gap-1">Telah dicairkan ke agen</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Chart Area -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-base font-bold text-slate-900">Tren Penjualan Paket (2026)</h3>
+                        </div>
+                        <div class="relative h-72 w-full">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Agents -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <h3 class="text-base font-bold text-slate-900 mb-4">Top Sales Agent (Bulan Ini)</h3>
+                        <div class="flex-1 space-y-4">
+                            <!-- Agent 1 -->
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 border border-slate-200">BS</div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-slate-900">Budi Santoso</h4>
+                                    <p class="text-xs text-slate-500">Afiliator Premium</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-black text-emerald-600">12 Pax</p>
+                                </div>
+                            </div>
+                            <!-- Agent 2 -->
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 border border-slate-200">SA</div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-slate-900">Siti Aminah</h4>
+                                    <p class="text-xs text-slate-500">Reseller Cabang</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-black text-emerald-600">8 Pax</p>
+                                </div>
+                            </div>
+                            <!-- Agent 3 -->
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 border border-slate-200">HW</div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-slate-900">Hendra Wijaya</h4>
+                                    <p class="text-xs text-slate-500">Afiliator</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-black text-emerald-600">5 Pax</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="switchPage('agen', document.querySelectorAll('.nav-item')[2])" class="w-full mt-4 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">Lihat Semua Agen</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 2. PAGE: PURCHASE INTELLIGENCE (AI)        -->
+            <!-- ========================================== -->
+            <div id="page-intelligence" class="page-content max-w-7xl mx-auto">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fas fa-brain text-amber-500"></i> Purchase Intelligence
+                        </h1>
+                        <p class="text-sm text-slate-500 mt-1">Sistem deteksi fluktuasi harga maskapai & hotel secara real-time via Web Scraping.</p>
+                    </div>
+                </div>
+
+                <!-- AI Insight Alert -->
+                <div class="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-xl p-5 mb-6 flex gap-4 items-start shadow-sm">
+                    <div class="w-10 h-10 bg-amber-500 text-white rounded-full flex items-center justify-center shrink-0 shadow-md">
+                        <i class="fas fa-lightbulb text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-amber-900 mb-1">Rekomendasi Keputusan Pembelian (A.I Insight)</h3>
+                        <p class="text-sm text-amber-800 leading-relaxed">Sistem mendeteksi tren penurunan harga tiket <b>Saudia Airlines (CGK-JED)</b> untuk periode Ramadhan. Diprediksi harga akan turun <b>~12% ($110)</b> dalam 4 hari ke depan akibat promo musiman. <br><span class="font-bold">Aksi Disarankan:</span> Tunda issued tiket grup Ramadhan hingga hari Jumat (20 Okt 2026).</p>
+                    </div>
+                </div>
+
+                <!-- Chart & Flight Prices -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Flight Price Chart -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-base font-bold text-slate-900">Pergerakan Harga Tiket (CGK - JED / PP)</h3>
+                            <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded">30 Hari Terakhir</span>
+                        </div>
+                        <div class="relative h-72 w-full">
+                            <canvas id="priceFlightChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Live Hotel Monitoring -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-base font-bold text-slate-900 mb-4">Live Monitoring Hotel (Mekkah)</h3>
+                        <div class="space-y-4">
+                            <!-- Hotel 1 -->
+                            <div class="border border-slate-100 rounded-xl p-3 shadow-sm bg-slate-50">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-900">Pullman Zamzam</h4>
+                                        <div class="flex text-amber-400 text-[10px] mt-0.5"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                                    </div>
+                                    <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">TURUN</span>
+                                </div>
+                                <div class="flex items-end justify-between mt-3">
+                                    <div>
+                                        <p class="text-[10px] text-slate-400 line-through">SAR 550 / malam</p>
+                                        <p class="text-lg font-black text-emerald-600">SAR 480</p>
+                                    </div>
+                                    <button class="bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors">Lock Harga</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Hotel 2 -->
+                            <div class="border border-slate-100 rounded-xl p-3 shadow-sm bg-slate-50">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-900">Swissôtel Makkah</h4>
+                                        <div class="flex text-amber-400 text-[10px] mt-0.5"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                                    </div>
+                                    <span class="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-1 rounded">NAIK</span>
+                                </div>
+                                <div class="flex items-end justify-between mt-3">
+                                    <div>
+                                        <p class="text-[10px] text-slate-400">SAR 500 / malam</p>
+                                        <p class="text-lg font-black text-red-600">SAR 580</p>
+                                    </div>
+                                    <button class="bg-slate-200 text-slate-400 text-xs font-bold px-3 py-1.5 rounded-lg cursor-not-allowed">Hindari</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 3. PAGE: MANAJEMEN AGEN (SALES AGENT)      -->
+            <!-- ========================================== -->
+            <div id="page-agen" class="page-content max-w-7xl mx-auto">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Manajemen Sales Agent</h1>
+                        <p class="text-sm text-slate-500 mt-1">Kelola data Afiliator, Reseller, tier komisi, dan persetujuan penarikan dana.</p>
+                    </div>
+                    <button onclick="alert('Membuka modal tambah agen baru...')" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2 active:scale-95">
+                        <i class="fas fa-plus"></i> Registrasi Agen Baru
+                    </button>
+                </div>
+
+                <!-- Table Container -->
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" placeholder="Cari nama, email, atau no telp..." class="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none w-72 transition-colors">
+                        </div>
+                        <div class="flex gap-2">
+                            <select class="bg-white border border-slate-300 text-sm rounded-lg px-3 py-2 outline-none focus:border-primary-500 text-slate-600">
+                                <option>Semua Role</option>
+                                <option>Reseller (Cabang)</option>
+                                <option>Afiliator</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600">
+                            <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th scope="col" class="px-6 py-4 font-bold">Nama Agen</th>
+                                    <th scope="col" class="px-6 py-4 font-bold">Role & Tier</th>
+                                    <th scope="col" class="px-6 py-4 font-bold text-center">Total Jamaah</th>
+                                    <th scope="col" class="px-6 py-4 font-bold text-right">Total Penjualan</th>
+                                    <th scope="col" class="px-6 py-4 font-bold text-center">Status</th>
+                                    <th scope="col" class="px-6 py-4 font-bold text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold">BS</div>
+                                            <div>
+                                                <p class="font-bold text-slate-900">Budi Santoso</p>
+                                                <p class="text-[11px] text-slate-500">0812-3456-7890</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-block bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded">Afiliator Premium</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-bold text-slate-900">12</td>
+                                    <td class="px-6 py-4 text-right font-bold text-emerald-600">Rp 350.000.000</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Aktif</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-slate-400 hover:text-primary-600 transition-colors p-1" title="Detail"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold">SA</div>
+                                            <div>
+                                                <p class="font-bold text-slate-900">Siti Aminah</p>
+                                                <p class="text-[11px] text-slate-500">0819-8765-4321</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-block bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded">Reseller Cabang</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-bold text-slate-900">8</td>
+                                    <td class="px-6 py-4 text-right font-bold text-emerald-600">Rp 235.000.000</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Aktif</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-slate-400 hover:text-primary-600 transition-colors p-1" title="Detail"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold">HW</div>
+                                            <div>
+                                                <p class="font-bold text-slate-900">Hendra Wijaya</p>
+                                                <p class="text-[11px] text-slate-500">0852-1122-3344</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-block bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded border border-slate-200">Afiliator Standard</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-bold text-slate-900">5</td>
+                                    <td class="px-6 py-4 text-right font-bold text-emerald-600">Rp 140.000.000</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400"><span class="w-2 h-2 rounded-full bg-slate-300"></span> Inaktif</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-slate-400 hover:text-primary-600 transition-colors p-1" title="Detail"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination (Static Mock) -->
+                    <div class="p-4 border-t border-slate-200 flex justify-between items-center text-sm text-slate-500 bg-white">
+                        <span>Menampilkan 1 hingga 3 dari 24 agen</span>
+                        <div class="flex gap-1">
+                            <button class="px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50" disabled>Sebelumnnya</button>
+                            <button class="px-3 py-1 border border-primary-500 bg-primary-50 text-primary-700 font-bold rounded-md">1</button>
+                            <button class="px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-50">2</button>
+                            <button class="px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-50">3</button>
+                            <button class="px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-50">Selanjutnya</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Placeholders for others to prevent empty screen errors -->
+            <div id="page-customer" class="page-content max-w-7xl mx-auto text-center py-20 text-slate-500">
+                <i class="fas fa-tools text-4xl mb-4 text-slate-300"></i>
+                <h2 class="text-xl font-bold text-slate-800">Modul CRM (Data Jamaah)</h2>
+                <p>Dalam tahap pengembangan. Menarik data sinkronisasi dari Odoo dan Kotlin Room DB.</p>
+            </div>
+            <div id="page-paket" class="page-content max-w-7xl mx-auto text-center py-20 text-slate-500">
+                <i class="fas fa-tools text-4xl mb-4 text-slate-300"></i>
+                <h2 class="text-xl font-bold text-slate-800">Modul Manajemen Paket</h2>
+                <p>Dalam tahap pengembangan. Sinkronisasi inventaris dan kuota dari ERP.</p>
+            </div>
+
+        </div> <!-- /Page Content -->
+    </main>
+
+    <!-- Script for Logic & Chart.js -->
+    <script>
+        // Tab / Page Switching Logic
+        function switchPage(pageId, btnElement) {
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.remove('active');
+            });
+            // Show target page
+            document.getElementById('page-' + pageId).classList.add('active');
+
+            // Update Nav Active State
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active', 'bg-white/5', 'text-white', 'border-l-4');
+                btn.style.backgroundColor = "";
+                btn.style.color = "";
+                btn.style.borderLeftColor = "transparent";
+            });
+
+            // Set current active
+            btnElement.classList.add('active');
+            btnElement.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+            btnElement.style.color = "#34d399";
+            btnElement.style.borderLeftColor = "#34d399";
+
+            // If switching to intelligence, render chart if not rendered
+            if(pageId === 'intelligence') {
+                renderFlightChart();
+            }
+        }
+
+        // =====================================
+        // CHART.JS INITIALIZATION (HIGH FIDELITY)
+        // =====================================
+
+        // 1. Chart Sales (Dasbor)
+        const ctxSales = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctxSales, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt'],
+                datasets: [
+                    {
+                        label: 'Penjualan Paket (Pax)',
+                        data: [45, 60, 55, 80, 110, 95, 130, 120, 140, 145],
+                        backgroundColor: '#10b981', // Emerald 500
+                        borderRadius: 4,
+                        barThickness: 20
+                    },
+                    {
+                        label: 'Target Penjualan',
+                        data: [50, 50, 75, 75, 100, 100, 125, 125, 150, 150],
+                        type: 'line',
+                        borderColor: '#94a3b8',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { dash: [4, 4] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Chart Purchase Intelligence (Flight Prices)
+        let flightChartRendered = false;
+        function renderFlightChart() {
+            if (flightChartRendered) return;
+            const ctxFlight = document.getElementById('priceFlightChart').getContext('2d');
+            
+            // Create Gradient for Line
+            let gradientSaudia = ctxFlight.createLinearGradient(0, 0, 0, 300);
+            gradientSaudia.addColorStop(0, 'rgba(5, 150, 105, 0.2)'); // Emerald 600
+            gradientSaudia.addColorStop(1, 'rgba(5, 150, 105, 0)');
+
+            let gradientGaruda = ctxFlight.createLinearGradient(0, 0, 0, 300);
+            gradientGaruda.addColorStop(0, 'rgba(59, 130, 246, 0.2)'); // Blue 500
+            gradientGaruda.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+            new Chart(ctxFlight, {
+                type: 'line',
+                data: {
+                    labels: ['1 Okt', '5 Okt', '10 Okt', '15 Okt', '20 Okt', '25 Okt', '30 Okt', '4 Nov (Prediksi)', '9 Nov (Prediksi)'],
+                    datasets: [
+                        {
+                            label: 'Saudia Airlines ($)',
+                            data: [980, 975, 990, 1050, 1030, 1010, 990, 880, 850],
+                            borderColor: '#059669', // Emerald 600
+                            backgroundColor: gradientSaudia,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#059669',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Garuda Indonesia ($)',
+                            data: [1050, 1060, 1040, 1100, 1090, 1080, 1050, 1000, 980],
+                            borderColor: '#3b82f6', // Blue 500
+                            backgroundColor: gradientGaruda,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#3b82f6',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 12, titleFont: { size: 13 }, bodyFont: { size: 14, weight: 'bold' } }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: false, 
+                            min: 700, 
+                            max: 1200, 
+                            grid: { color: '#f1f5f9' }, 
+                            ticks: { callback: function(value) { return '$' + value; } } 
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+            flightChartRendered = true;
+        }
+    </script>
+</body>
+</html>
