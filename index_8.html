@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteTrip Core - SaaS Admin Dashboard</title>
+    
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857', 900: '#064e3b' },
+                        sidebar: '#0f172a'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .page-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .page-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .nav-item { border-left: 4px solid transparent; transition: all 0.2s; cursor: pointer; }
+        .nav-item.active { background-color: rgba(255, 255, 255, 0.1); color: #34d399; border-left: 4px solid #34d399; }
+        .nav-item:hover:not(.active) { background-color: rgba(255, 255, 255, 0.05); color: white; }
+        
+        .submenu { display: none; margin-left: 1.5rem; border-left: 1px solid #334155; padding-left: 0.5rem; margin-top: 0.25rem; }
+        .submenu.open { display: block; }
+        .submenu-item { display: block; padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #94a3b8; border-radius: 0.375rem; margin-bottom: 0.125rem; transition: all 0.2s; cursor: pointer; text-align: left; width: 100%; }
+        .submenu-item:hover { color: #f8fafc; background-color: rgba(255,255,255,0.05); }
+        .submenu-item.active { color: #34d399; font-weight: 600; background-color: rgba(52, 211, 153, 0.1); }
+        
+        .menu-header { padding-left: 0.75rem; padding-right: 0.75rem; font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; margin-top: 1.5rem; }
+        
+        .caret { transition: transform 0.2s; }
+        .caret.open { transform: rotate(90deg); }
+
+        table { width: 100%; text-align: left; }
+        th { padding: 1rem; font-weight: 700; color: #64748b; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; }
+        td { padding: 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; color: #475569; }
+        tr:hover td { background-color: #f8fafc; }
+
+        .profile-menu { display: none; }
+        .profile-menu.open { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden antialiased">
+
+    <!-- ============================================== -->
+    <!-- SIDEBAR -->
+    <!-- ============================================== -->
+    <div id="mobile-sidebar-overlay" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden opacity-0 transition-opacity duration-300" onclick="toggleMobileMenu()"></div>
+    <aside id="main-sidebar" class="fixed md:relative top-0 left-0 h-full w-64 bg-sidebar text-slate-300 flex flex-col shrink-0 transition-transform duration-300 z-50 -translate-x-full md:translate-x-0">
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800/50 bg-slate-900 shrink-0 w-full">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary-500/30">B</div>
+                <span class="text-white text-lg font-bold tracking-wide">ByteTrip<span class="text-primary-400 font-medium">Core</span></span>
+            </div>
+            <button onclick="toggleMobileMenu()" class="md:hidden text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 px-3 hide-scrollbar">
+            <!-- MAIN -->
+            <p class="menu-header mt-2">Main</p>
+            <button onclick="switchPage('main-dasbor', this)" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left">
+                <i class="fas fa-home w-5 text-center text-base"></i><span class="font-medium text-sm">Dasbor</span>
+            </button>
+
+            <!-- MANAJEMEN -->
+            <p class="menu-header">Manajemen</p>
+            
+            <!-- Pembelian -->
+            <div>
+                <button onclick="toggleSubmenu('sub-pembelian', this)" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left">
+                    <div class="flex items-center gap-3"><i class="fas fa-shopping-cart w-5 text-center text-base"></i><span class="font-medium text-sm">Pembelian</span></div>
+                    <i class="fas fa-chevron-right text-[10px] caret"></i>
+                </button>
+                <div id="sub-pembelian" class="submenu">
+                    <button onclick="switchPage('beli-ringkasan', this)" class="submenu-item">Ringkasan</button>
+                    <button onclick="switchPage('beli-po', this)" class="submenu-item">Pesanan (PO)</button>
+                    <button onclick="switchPage('beli-barang', this)" class="submenu-item">Master Barang/Jasa</button>
+                    <button onclick="switchPage('beli-suplier', this)" class="submenu-item">Master Suplier</button>
+                </div>
+            </div>
+
+            <!-- Penjualan -->
+            <div>
+                <button onclick="toggleSubmenu('sub-penjualan', this)" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left">
+                    <div class="flex items-center gap-3"><i class="fas fa-chart-line w-5 text-center text-base"></i><span class="font-medium text-sm">Penjualan</span></div>
+                    <i class="fas fa-chevron-right text-[10px] caret"></i>
+                </button>
+                <div id="sub-penjualan" class="submenu">
+                    <button onclick="switchPage('jual-ringkasan', this)" class="submenu-item">Ringkasan</button>
+                    <button onclick="switchPage('jual-produk', this)" class="submenu-item">Produk/Paket</button>
+                    <button onclick="switchPage('jual-agen', this)" class="submenu-item">Agen</button>
+                    <button onclick="switchPage('jual-pelanggan', this)" class="submenu-item">Pelanggan</button>
+                </div>
+            </div>
+
+            <!-- Finansial -->
+            <div>
+                <button onclick="toggleSubmenu('sub-finansial', this)" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left">
+                    <div class="flex items-center gap-3"><i class="fas fa-wallet w-5 text-center text-base"></i><span class="font-medium text-sm">Finansial</span></div>
+                    <i class="fas fa-chevron-right text-[10px] caret"></i>
+                </button>
+                <div id="sub-finansial" class="submenu">
+                    <button onclick="switchPage('fin-ringkasan', this)" class="submenu-item">Ringkasan</button>
+                    <button onclick="switchPage('fin-tagihan', this)" class="submenu-item">Tagihan</button>
+                    <button onclick="switchPage('fin-aruskas', this)" class="submenu-item">Arus Kas</button>
+                    <button onclick="switchPage('fin-labarugi', this)" class="submenu-item">Laba Rugi</button>
+                    <button onclick="switchPage('fin-neraca', this)" class="submenu-item">Neraca</button>
+                </div>
+            </div>
+
+            <!-- Masar (Khusus Haji/Umroh) -->
+            <div>
+                <button onclick="toggleSubmenu('sub-masar', this)" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left">
+                    <div class="flex items-center gap-3"><i class="fas fa-kaaba w-5 text-center text-base text-amber-500"></i><span class="font-medium text-sm text-amber-50">Masar</span></div>
+                    <i class="fas fa-chevron-right text-[10px] caret"></i>
+                </button>
+                <div id="sub-masar" class="submenu">
+                    <button onclick="switchPage('masar-doa', this)" class="submenu-item">Doa</button>
+                    <button onclick="switchPage('masar-manasik', this)" class="submenu-item">Manasik</button>
+                </div>
+            </div>
+
+            <!-- PENGATURAN -->
+            <p class="menu-header">Pengaturan</p>
+            <button onclick="switchPage('set-perusahaan', this)" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left">
+                <i class="fas fa-building w-5 text-center text-base"></i><span class="font-medium text-sm">Perusahaan</span>
+            </button>
+            <button onclick="switchPage('set-integrasi', this)" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left">
+                <i class="fas fa-plug w-5 text-center text-base"></i><span class="font-medium text-sm">Integrasi</span>
+            </button>
+            <button onclick="switchPage('set-plugin', this)" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left">
+                <i class="fas fa-puzzle-piece w-5 text-center text-base"></i><span class="font-medium text-sm">Plugin</span>
+            </button>
+
+            <!-- INFORMASI -->
+            <p class="menu-header">Informasi</p>
+            <button onclick="switchPage('info-dok', this)" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left"><i class="fas fa-book w-5 text-center text-base"></i><span class="font-medium text-sm">Dokumentasi</span></button>
+            <button onclick="switchPage('info-support', this)" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left"><i class="fas fa-headset w-5 text-center text-base"></i><span class="font-medium text-sm">Support</span></button>
+            <button onclick="switchPage('info-feedback', this)" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left mb-6"><i class="fas fa-comment-alt w-5 text-center text-base"></i><span class="font-medium text-sm">Feedback</span></button>
+        </nav>
+
+        <!-- Akun Menu (Bottom Sidebar) -->
+        <div class="relative p-4 border-t border-slate-800/50 shrink-0">
+            <!-- Popup Menu Akun -->
+            <div id="akun-popup" class="profile-menu absolute bottom-20 left-4 w-56 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-50">
+                <div class="px-4 py-3 border-b border-slate-700">
+                    <p class="text-sm font-bold text-white">SJG Travel</p>
+                    <p class="text-[10px] text-primary-400">ByteTrip Enterprise License</p>
+                </div>
+                <button onclick="switchPage('akun-profil', this); toggleProfileMenu();" class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors flex items-center gap-2"><i class="fas fa-user-circle"></i> Profil & Lisensi</button>
+                <button onclick="alert('Melakukan proses logout...')" class="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-slate-700 hover:text-red-300 transition-colors flex items-center gap-2 border-t border-slate-700"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+
+            <div onclick="toggleProfileMenu()" class="flex items-center gap-3 bg-slate-800/50 p-3 rounded-xl border border-slate-700 cursor-pointer hover:bg-slate-800 transition-colors">
+                <img src="https://placehold.co/100x100/10b981/ffffff?text=AD" class="w-9 h-9 rounded-lg">
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-[13px] font-bold text-white truncate leading-tight">Admin Pusat</p>
+                    <p class="text-[10px] text-slate-400 truncate">SJG Travel</p>
+                </div>
+                <i class="fas fa-ellipsis-v text-slate-500 text-sm px-1"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============================================== -->
+    <!-- MAIN CONTENT AREA                              -->
+    <!-- ============================================== -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative z-10" onclick="closeProfileMenu(event)">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 shrink-0 z-10 shadow-sm relative">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleMobileMenu()" class="md:hidden text-slate-500 hover:text-slate-800"><i class="fas fa-bars text-xl"></i></button>
+                <h2 id="topbar-title" class="text-slate-800 font-bold text-lg hidden sm:block">Main <span class="text-slate-400 mx-1">/</span> Dasbor Utama</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative hidden md:block">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" placeholder="Global search..." class="pl-9 pr-4 py-1.5 bg-slate-100 border-transparent rounded-lg text-[13px] focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none w-64 transition-all">
+                </div>
+                <button class="relative text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fas fa-bell text-lg"></i><span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- FULL WIDTH CONTAINER -->
+        <div class="flex-1 overflow-y-auto p-6 scroll-smooth bg-[#f8fafc] relative z-0">
+            
+            <!-- MAIN -> DASBOR -->
+            <div id="page-main-dasbor" class="page-content active w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6">
+                    <div><h1 class="text-2xl font-bold text-slate-900">Dasbor Eksekutif</h1><p class="text-sm text-slate-500 mt-1">Ringkasan performa bisnis dan operasional travel secara real-time.</p></div>
+                    <select class="bg-white border border-slate-300 text-sm rounded-lg px-4 py-2 focus:outline-none focus:border-primary-500 font-medium shadow-sm"><option>Bulan Ini (Okt 2026)</option><option>Tahun 2026</option></select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-2"><p class="text-sm font-semibold text-slate-500">Pendapatan Bersih</p><div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fas fa-wallet"></i></div></div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">Rp 1.25B</h3><p class="text-xs font-bold text-emerald-500 flex items-center gap-1"><i class="fas fa-arrow-up"></i> +12.5% <span class="text-slate-400 font-normal">vs bulan lalu</span></p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-2"><p class="text-sm font-semibold text-slate-500">Total Closing</p><div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fas fa-users"></i></div></div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">145 Pax</h3><p class="text-xs font-bold text-emerald-500 flex items-center gap-1"><i class="fas fa-arrow-up"></i> +8.2% <span class="text-slate-400 font-normal">vs bulan lalu</span></p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-2"><p class="text-sm font-semibold text-slate-500">Efisiensi Pembelian</p><div class="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fas fa-shopping-basket"></i></div></div>
+                        <h3 class="text-2xl font-black text-slate-900 mb-1">18.4%</h3><p class="text-xs font-bold text-emerald-500 flex items-center gap-1">Penghematan via A.I</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-2"><p class="text-sm font-semibold text-slate-500">Net Profit Margin</p><div class="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fas fa-chart-line"></i></div></div>
+                        <h3 class="text-2xl font-black text-emerald-600 mb-1">36%</h3><p class="text-xs font-bold text-slate-400 flex items-center gap-1">Laba Bersih: Rp 450M</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm"><h3 class="text-base font-bold text-slate-900 mb-4">Tren Penjualan vs Pembelian (YTD)</h3><div class="relative h-72 w-full"><canvas id="mainDashboardChart"></canvas></div></div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"><h3 class="text-base font-bold text-slate-900 mb-4">Notifikasi Sistem</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-amber-50 border border-amber-100 rounded-lg flex gap-3 items-start"><i class="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i><div><p class="text-[12px] font-bold text-slate-800">Tiket Saudia Airlines Turun</p><p class="text-[11px] text-slate-500">Sistem mendeteksi harga CGK-JED turun 12%.</p></div></div>
+                            <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg flex gap-3 items-start"><i class="fas fa-info-circle text-blue-500 mt-0.5"></i><div><p class="text-[12px] font-bold text-slate-800">Integrasi Odoo Sinkron</p><p class="text-[11px] text-slate-500">Jurnal keuangan tersinkronisasi 5 menit lalu.</p></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PEMBELIAN -> RINGKASAN -->
+            <div id="page-beli-ringkasan" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2"><i class="fas fa-brain text-amber-500"></i> Dasbor Intelijen Pembelian</h1><p class="text-sm text-slate-500 mt-1">Scraping & Analisis A.I untuk fluktuasi harga Maskapai dan Hotel.</p></div></div>
+                <div class="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-xl p-5 mb-6 flex gap-4 items-start shadow-sm"><div class="w-10 h-10 bg-amber-500 text-white rounded-full flex items-center justify-center shrink-0 shadow-md"><i class="fas fa-lightbulb text-lg"></i></div><div><h3 class="text-[14px] font-bold text-amber-900 mb-1">Rekomendasi Keputusan Pembelian (A.I Insight)</h3><p class="text-[13px] text-amber-800 leading-relaxed">Sistem mendeteksi tren penurunan harga tiket <b>Saudia Airlines (CGK-JED)</b>. Diprediksi turun <b>~12% ($110)</b> dalam 4 hari ke depan. <br><span class="font-bold">Aksi:</span> Tunda issued tiket grup Ramadhan hingga Jumat (20 Okt).</p></div></div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm"><h3 class="text-base font-bold text-slate-900 mb-4">Live Harga Tiket (CGK - JED / PP)</h3><div class="relative h-72 w-full"><canvas id="priceFlightChart"></canvas></div></div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"><h3 class="text-base font-bold text-slate-900 mb-4">Pemantauan Hotel (Mekkah)</h3>
+                        <div class="space-y-4">
+                            <div class="border border-slate-100 rounded-xl p-3 shadow-sm bg-slate-50"><div class="flex justify-between items-start mb-2"><div><h4 class="text-sm font-bold text-slate-900">Pullman Zamzam</h4></div><span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded">TURUN</span></div><div class="flex items-end justify-between mt-2"><div><p class="text-[10px] text-slate-400 line-through">SAR 550</p><p class="text-lg font-black text-emerald-600">SAR 480</p></div><button class="bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-700">Lock Harga</button></div></div>
+                            <div class="border border-slate-100 rounded-xl p-3 shadow-sm bg-slate-50"><div class="flex justify-between items-start mb-2"><div><h4 class="text-sm font-bold text-slate-900">Swissôtel Makkah</h4></div><span class="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-1 rounded">NAIK</span></div><div class="flex items-end justify-between mt-2"><div><p class="text-[10px] text-slate-400">SAR 500</p><p class="text-lg font-black text-red-600">SAR 580</p></div><button class="bg-slate-200 text-slate-400 text-xs font-bold px-3 py-1.5 rounded-lg cursor-not-allowed">Hindari</button></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PEMBELIAN -> PESANAN (PO) -->
+            <div id="page-beli-po" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Pesanan Pembelian (PO)</h1>
+                        <p class="text-sm text-slate-500 mt-1">Buat dokumen RFQ dan Purchase Order untuk vendor/suplier Anda.</p>
+                    </div>
+                    <button onclick="toggleDrawer('drawer-po', true)" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Buat Pesanan
+                    </button>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-4">
+                        <div class="relative flex-1 min-w-[250px] max-w-md">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" placeholder="Cari nomor RFQ / PO / Vendor..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors bg-white">
+                        </div>
+                        <div class="flex gap-2">
+                            <select class="border border-slate-300 text-sm rounded-lg px-3 py-2 outline-none focus:border-primary-500 bg-white">
+                                <option value="">Semua Status</option>
+                                <option value="rfq">RFQ (Draft)</option>
+                                <option value="approved">PO Disetujui</option>
+                                <option value="done">Selesai / Diterima</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600 whitespace-nowrap">
+                            <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-4">Nomor Referensi</th>
+                                    <th class="px-6 py-4">Tanggal Order</th>
+                                    <th class="px-6 py-4">Vendor / Suplier</th>
+                                    <th class="px-6 py-4 text-center">Total Qty</th>
+                                    <th class="px-6 py-4 text-right">Total Tagihan</th>
+                                    <th class="px-6 py-4 text-center">Status</th>
+                                    <th class="px-6 py-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-6 py-4 font-mono font-bold text-slate-800">PO-202610-001</td>
+                                    <td class="px-6 py-4">12 Okt 2026</td>
+                                    <td class="px-6 py-4 font-bold text-slate-700">PT Garuda Indonesia</td>
+                                    <td class="px-6 py-4 text-center font-bold">50 Pax</td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-900">Rp 650.000.000</td>
+                                    <td class="px-6 py-4 text-center"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">PO Disetujui</span></td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-slate-400 hover:text-blue-600 mx-1"><i class="fas fa-eye"></i></button>
+                                        <button class="text-slate-400 hover:text-primary-600 mx-1" title="Terima Barang"><i class="fas fa-check-square"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-6 py-4 font-mono font-bold text-slate-800">RFQ-202610-045</td>
+                                    <td class="px-6 py-4">15 Okt 2026</td>
+                                    <td class="px-6 py-4 font-bold text-slate-700">PT Koper Jaya</td>
+                                    <td class="px-6 py-4 text-center font-bold">120 Pcs</td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-900">Rp 30.000.000</td>
+                                    <td class="px-6 py-4 text-center"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">RFQ (Draft)</span></td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button class="text-slate-400 hover:text-blue-600 mx-1"><i class="fas fa-edit"></i></button>
+                                        <button class="text-slate-400 hover:text-red-600 mx-1"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PEMBELIAN -> BARANG / JASA -->
+            <div id="page-beli-barang" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Master Barang & Jasa</h1>
+                        <p class="text-sm text-slate-500 mt-1">Katalog data master inventaris, bukan data transaksi.</p>
+                    </div>
+                    <button onclick="toggleDrawer('drawer-barang', true)" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Tambah Master Item
+                    </button>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-4">
+                        <div class="relative flex-1 min-w-[250px] max-w-md">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" placeholder="Cari kode SKU atau nama item..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary-500 outline-none transition-colors bg-white">
+                        </div>
+                        <div class="flex gap-2">
+                            <select class="border border-slate-300 text-sm rounded-lg px-3 py-2 outline-none focus:border-primary-500 bg-white">
+                                <option value="">Semua Kategori</option>
+                                <option value="perlengkapan">Perlengkapan</option>
+                                <option value="layanan">Layanan / Jasa</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600 whitespace-nowrap">
+                            <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-4">Kode (SKU)</th>
+                                    <th class="px-6 py-4">Nama Item</th>
+                                    <th class="px-6 py-4">Kategori</th>
+                                    <th class="px-6 py-4">Suplier Default</th>
+                                    <th class="px-6 py-4 text-right">Stok Gudang</th>
+                                    <th class="px-6 py-4 text-right">Harga Dasar/Acuan</th>
+                                    <th class="px-6 py-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-6 py-4 font-mono text-slate-500">INV-001</td>
+                                    <td class="px-6 py-4 font-bold text-slate-800">Koper Fiber 20 Inch (Logo)</td>
+                                    <td class="px-6 py-4">Perlengkapan</td>
+                                    <td class="px-6 py-4">PT Koper Jaya</td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-900">120 Pcs</td>
+                                    <td class="px-6 py-4 text-right text-slate-700">Rp 250.000</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button onclick="toggleDrawer('drawer-barang', true)" class="text-slate-400 hover:text-blue-600 mx-1"><i class="fas fa-edit"></i></button>
+                                        <button class="text-slate-400 hover:text-red-600 mx-1"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-6 py-4 font-mono text-slate-500">TKT-001</td>
+                                    <td class="px-6 py-4 font-bold text-slate-800">Tiket CGK-JED PP Economy</td>
+                                    <td class="px-6 py-4">Maskapai</td>
+                                    <td class="px-6 py-4">PT Garuda Indonesia</td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-400">~</td>
+                                    <td class="px-6 py-4 text-right text-slate-700">Rp 13.000.000</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button onclick="toggleDrawer('drawer-barang', true)" class="text-slate-400 hover:text-blue-600 mx-1"><i class="fas fa-edit"></i></button>
+                                        <button class="text-slate-400 hover:text-red-600 mx-1"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PEMBELIAN -> SUPLIER -->
+            <div id="page-beli-suplier" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Master Vendor & Suplier</h1>
+                        <p class="text-sm text-slate-500 mt-1">Database mitra bisnis, maskapai, dan hotel Anda.</p>
+                    </div>
+                    <div id="btn-group-suplier" class="flex gap-2">
+                        <button onclick="toggleDrawer('drawer-suplier', true)" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Tambah Vendor
+                        </button>
+                    </div>
+                    <div id="btn-group-kategori" class="flex gap-2 hidden">
+                        <button onclick="toggleDrawer('drawer-kat-suplier', true)" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Tambah Kategori
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white border-b border-slate-200 flex gap-6 px-6 pt-4 rounded-t-xl shadow-sm">
+                    <button onclick="switchSuplierTab('data')" id="tab-sup-data" class="pb-3 text-sm font-bold border-b-2 border-primary-500 text-primary-600">Data Suplier</button>
+                    <button onclick="switchSuplierTab('kategori')" id="tab-sup-kategori" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">Kategori Suplier</button>
+                </div>
+
+                <div class="bg-white border border-t-0 border-slate-200 rounded-b-xl shadow-sm flex flex-col min-h-[400px]">
+                    <div id="content-sup-data" class="block w-full">
+                        <div class="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-4">
+                            <div class="relative flex-1 max-w-sm">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" placeholder="Cari nama vendor atau PIC..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:border-primary-500 outline-none">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600 whitespace-nowrap">
+                                <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-6 py-4">Nama Vendor / Suplier</th>
+                                        <th class="px-6 py-4">Kategori</th>
+                                        <th class="px-6 py-4">PIC / Narahubung</th>
+                                        <th class="px-6 py-4">Kontak</th>
+                                        <th class="px-6 py-4 text-center">Status</th>
+                                        <th class="px-6 py-4 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-6 py-4 font-bold text-slate-800">PT Garuda Indonesia</td>
+                                        <td class="px-6 py-4"><span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-[11px] font-bold border border-blue-100">Maskapai</span></td>
+                                        <td class="px-6 py-4">Bpk. Anton S.</td>
+                                        <td class="px-6 py-4">anton@garuda.com</td>
+                                        <td class="px-6 py-4 text-center"><span class="text-emerald-500 font-bold text-xs"><i class="fas fa-check-circle"></i> Aktif</span></td>
+                                        <td class="px-6 py-4 text-center">
+                                            <button onclick="toggleDrawer('drawer-suplier', true)" class="text-slate-400 hover:text-blue-600 mx-1"><i class="fas fa-edit"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="content-sup-kategori" class="hidden w-full">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-600 whitespace-nowrap">
+                                <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                                    <tr>
+                                        <th class="px-6 py-4 w-1/4">Nama Kategori</th>
+                                        <th class="px-6 py-4 w-1/2">Deskripsi / Catatan</th>
+                                        <th class="px-6 py-4 text-center w-32">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-6 py-4 font-bold text-slate-800">Maskapai</td>
+                                        <td class="px-6 py-4 text-slate-500">Penyedia tiket penerbangan domestik dan internasional.</td>
+                                        <td class="px-6 py-4 text-center">
+                                            <button onclick="toggleDrawer('drawer-kat-suplier', true)" class="text-slate-400 hover:text-blue-600 mx-1"><i class="fas fa-edit"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PENJUALAN -> RINGKASAN -->
+            <div id="page-jual-ringkasan" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Ringkasan Penjualan (Pipeline)</h1><p class="text-sm text-slate-500 mt-1">Analitik B2B (Agen) dan B2C (Direct Sales).</p></div></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Leads Masuk</p><h3 class="text-3xl font-black text-slate-800">342</h3><p class="text-[11px] text-emerald-500 mt-2"><i class="fas fa-arrow-up"></i> +15 dari Ads</p></div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Prospek Hangat (Follow Up)</p><h3 class="text-3xl font-black text-slate-800">128</h3><p class="text-[11px] text-amber-500 mt-2"><i class="fas fa-clock"></i> 45 Perlu dihubungi</p></div>
+                    <div class="bg-white p-5 rounded-xl border border-emerald-200 bg-emerald-50 shadow-sm"><p class="text-xs font-bold text-emerald-600 uppercase">Closing (Win)</p><h3 class="text-3xl font-black text-emerald-800">145</h3><p class="text-[11px] text-emerald-600 mt-2">Conversion Rate: 42%</p></div>
+                </div>
+            </div>
+
+            <!-- PENJUALAN -> PRODUK/PAKET -->
+            <div id="page-jual-produk" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Produk / Paket Travel</h1><p class="text-sm text-slate-500 mt-1">Manajemen harga dan kuota paket.</p></div><button class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">+ Buat Paket</button></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <table>
+                        <thead><tr><th>Nama Paket</th><th>Kategori</th><th>Harga Jual (Publish)</th><th>Komisi Agen</th><th>Kuota Sisa</th></tr></thead>
+                        <tbody>
+                            <tr><td class="font-bold text-slate-800">Umroh Reguler 9 Hari</td><td>Umroh</td><td class="font-bold text-emerald-600">Rp 28.500.000</td><td class="text-blue-600">Rp 1.500.000</td><td><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold">15 Pax</span></td></tr>
+                            <tr><td class="font-bold text-slate-800">Turki Cappadocia 10 Hari</td><td>Liburan</td><td class="font-bold text-emerald-600">Rp 22.000.000</td><td class="text-blue-600">Rp 1.000.000</td><td><span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold">4 Pax</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PENJUALAN -> AGEN -->
+            <div id="page-jual-agen" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Manajemen Sales Agent</h1><p class="text-sm text-slate-500 mt-1">Jaringan Afiliator & Reseller.</p></div><button class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">+ Tambah Agen</button></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <table>
+                        <thead><tr><th>Nama Agen</th><th>Role / Tier</th><th>Closing YTD</th><th>Total Omset</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td class="font-bold text-slate-800">Budi Santoso</td><td><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Afiliator Premium</span></td><td class="font-bold">12 Pax</td><td class="text-emerald-600 font-bold">Rp 350.000.000</td><td><i class="fas fa-circle text-emerald-500 text-[10px]"></i> Aktif</td></tr>
+                            <tr><td class="font-bold text-slate-800">Siti Aminah</td><td><span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Reseller Cabang</span></td><td class="font-bold">8 Pax</td><td class="text-emerald-600 font-bold">Rp 235.000.000</td><td><i class="fas fa-circle text-emerald-500 text-[10px]"></i> Aktif</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PENJUALAN -> PELANGGAN (CRM) -->
+            <div id="page-jual-pelanggan" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Database Jamaah (CRM)</h1><p class="text-sm text-slate-500 mt-1">Data master KTP, Paspor, dan riwayat manifest.</p></div><button class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">+ Input Jamaah</button></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <table>
+                        <thead><tr><th>No. Paspor / KTP</th><th>Nama Jamaah</th><th>Paket Saat Ini</th><th>Agen Perujuk</th><th>Status Dokumen</th></tr></thead>
+                        <tbody>
+                            <tr><td class="font-mono text-slate-500">A1234567</td><td class="font-bold text-slate-800">H. Mursito</td><td>Umroh Reguler 9 Hari</td><td>(Direct Sales)</td><td><span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold">Lengkap 100%</span></td></tr>
+                            <tr><td class="font-mono text-slate-500">C9876543</td><td class="font-bold text-slate-800">Ahmad Faisal</td><td>Umroh Plus Turki</td><td>Budi Santoso</td><td><span class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold">Menunggu Paspor</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FINANSIAL -> RINGKASAN -->
+            <div id="page-fin-ringkasan" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Ringkasan Finansial</h1><p class="text-sm text-slate-500 mt-1">Kesehatan keuangan dan likuiditas perusahaan.</p></div></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Total Kas Aktif</p><h3 class="text-2xl font-black text-emerald-600 mt-1">Rp 2.450.000.000</h3><p class="text-[11px] text-slate-500 mt-2">Di Bank BCA & Mandiri</p></div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Piutang Jamaah (AR)</p><h3 class="text-2xl font-black text-amber-600 mt-1">Rp 450.000.000</h3><p class="text-[11px] text-slate-500 mt-2">Menunggu Pelunasan H-14</p></div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Hutang Vendor (AP)</p><h3 class="text-2xl font-black text-red-600 mt-1">Rp 1.200.000.000</h3><p class="text-[11px] text-slate-500 mt-2">Jatuh tempo maskapai & hotel</p></div>
+                </div>
+            </div>
+
+            <!-- FINANSIAL -> TAGIHAN -->
+            <div id="page-fin-tagihan" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Tagihan (Invoicing)</h1><p class="text-sm text-slate-500 mt-1">Manajemen Invoice dan Tagihan Pelanggan.</p></div><button class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">+ Buat Invoice</button></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <table>
+                        <thead><tr><th>No. Invoice</th><th>Jamaah / Pelanggan</th><th>Paket</th><th>Total Tagihan</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td class="font-mono text-slate-500 font-bold">INV-202610-001</td><td class="font-bold text-slate-800">H. Joko Widodo</td><td>Umroh Reguler</td><td class="font-bold text-slate-700">Rp 28.500.000</td><td><span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold">LUNAS</span></td></tr>
+                            <tr><td class="font-mono text-slate-500 font-bold">INV-202610-002</td><td class="font-bold text-slate-800">Siti Aminah</td><td>Umroh Plus Turki</td><td class="font-bold text-slate-700">Rp 35.000.000</td><td><span class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold">MENUNGGU PELUNASAN</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FINANSIAL -> ARUS KAS -->
+            <div id="page-fin-aruskas" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Arus Kas (Cashflow)</h1><p class="text-sm text-slate-500 mt-1">Buku mutasi kas dan bank operasional.</p></div></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <table>
+                        <thead><tr><th>Tanggal</th><th>Deskripsi Transaksi</th><th>Kategori</th><th>Kas Masuk (Debit)</th><th>Kas Keluar (Kredit)</th></tr></thead>
+                        <tbody>
+                            <tr><td class="text-slate-500">12 Okt 2026</td><td class="font-bold text-slate-800">Pelunasan INV-001 (Joko W)</td><td>Pendapatan</td><td class="font-bold text-emerald-600">Rp 18.500.000</td><td>-</td></tr>
+                            <tr><td class="text-slate-500">13 Okt 2026</td><td class="font-bold text-slate-800">Deposit Hotel Pullman</td><td>HPP - Hotel</td><td>-</td><td class="font-bold text-red-500">Rp 120.000.000</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FINANSIAL -> LABA RUGI -->
+            <div id="page-fin-labarugi" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Laba Rugi (Profit & Loss)</h1><p class="text-sm text-slate-500 mt-1">Bulan Oktober 2026.</p></div><button class="border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-bold shadow-sm">Export PDF</button></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 max-w-3xl">
+                    <div class="flex justify-between py-3 border-b border-slate-200"><span class="font-semibold text-slate-600">Pendapatan Penjualan Paket</span><span class="font-bold text-slate-900">Rp 1.250.000.000</span></div>
+                    <div class="flex justify-between py-3 border-b border-slate-200"><span class="font-semibold text-slate-600">Harga Pokok Penjualan (Tiket, Hotel, Visa)</span><span class="font-bold text-red-500">(Rp 700.000.000)</span></div>
+                    <div class="flex justify-between py-4 border-b-4 border-slate-200"><span class="font-black text-slate-800">LABA KOTOR</span><span class="font-black text-emerald-600">Rp 550.000.000</span></div>
+                    <div class="flex justify-between py-3 border-b border-slate-200"><span class="font-semibold text-slate-600">Biaya Operasional (Gaji, Marketing, Komisi)</span><span class="font-bold text-red-500">(Rp 100.000.000)</span></div>
+                    <div class="flex justify-between py-4 bg-emerald-50 px-4 -mx-4 rounded-b-xl mt-2"><span class="font-black text-emerald-900 text-lg">LABA BERSIH (NET PROFIT)</span><span class="font-black text-emerald-700 text-lg">Rp 450.000.000</span></div>
+                </div>
+            </div>
+
+            <!-- FINANSIAL -> NERACA -->
+            <div id="page-fin-neraca" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Neraca (Balance Sheet)</h1><p class="text-sm text-slate-500 mt-1">Posisi Keuangan Per 31 Okt 2026.</p></div></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-8 text-center text-slate-500"><i class="fas fa-university text-4xl mb-3 text-slate-300"></i><h3 class="text-lg font-bold text-slate-800">Laporan Neraca Tersinkronisasi</h3><p class="text-sm">Data ditarik secara live dari modul akuntansi Odoo.</p></div>
+            </div>
+
+            <!-- MASAR -> DOA -->
+            <div id="page-masar-doa" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Manajemen Doa & Dzikir</h1><p class="text-sm text-slate-500 mt-1">Konten panduan doa untuk aplikasi ByteTrip Masar.</p></div><button class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">+ Tambah Doa</button></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <table>
+                        <thead><tr><th>Judul Doa</th><th>Kategori</th><th>Status Publikasi</th><th>Aksi</th></tr></thead>
+                        <tbody>
+                            <tr><td class="font-bold text-slate-800">Doa Masuk Masjidil Haram</td><td>Umroh</td><td><span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Published</span></td><td><button class="text-blue-500"><i class="fas fa-edit"></i> Edit</button></td></tr>
+                            <tr><td class="font-bold text-slate-800">Niat Umroh</td><td>Umroh</td><td><span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Published</span></td><td><button class="text-blue-500"><i class="fas fa-edit"></i> Edit</button></td></tr>
+                            <tr><td class="font-bold text-slate-800">Doa Lontar Jumrah</td><td>Haji</td><td><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">Draft</span></td><td><button class="text-blue-500"><i class="fas fa-edit"></i> Edit</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MASAR -> MANASIK -->
+            <div id="page-masar-manasik" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Jadwal & Materi Manasik</h1><p class="text-sm text-slate-500 mt-1">Sinkronisasi jadwal kajian ke aplikasi jamaah.</p></div><button class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">+ Buat Jadwal</button></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-8 text-center text-slate-500"><i class="fas fa-chalkboard-teacher text-4xl mb-3 text-slate-300"></i><h3 class="text-lg font-bold text-slate-800">Modul Manasik Terpadu</h3><p class="text-sm">Siapkan materi video, PDF, dan lokasi pertemuan manasik di sini.</p></div>
+            </div>
+
+            <!-- PENGATURAN -> PERUSAHAAN -->
+            <div id="page-set-perusahaan" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Profil Perusahaan</h1><p class="text-sm text-slate-500 mt-1">Pengaturan identitas biro travel (SaaS Tenant).</p></div><button class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">Simpan Perubahan</button></div>
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 max-w-3xl">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div><label class="block text-sm font-bold text-slate-700 mb-2">Nama Travel</label><input type="text" value="SJG Travel Umroh & Haji" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-50"></div>
+                        <div><label class="block text-sm font-bold text-slate-700 mb-2">Nomor Izin Kemenag (PPIU)</label><input type="text" value="U.123 Tahun 2025" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-50"></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-bold text-slate-700 mb-2">Alamat Kantor Pusat</label><textarea class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-50" rows="3">Jl. Sudirman No. 45, Jakarta Selatan</textarea></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PENGATURAN -> INTEGRASI -->
+            <div id="page-set-integrasi" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Integrasi ERP / Sistem Eksternal</h1><p class="text-sm text-slate-500 mt-1">Koneksikan ByteTrip Core dengan infrastruktur klien.</p></div></div>
+                <div class="bg-white border-b border-slate-200 flex gap-6 px-6 pt-4 rounded-t-xl shadow-sm">
+                    <button onclick="switchConfigTab('odoo')" id="tab-cfg-odoo" class="pb-3 text-sm font-bold border-b-2 border-primary-500 text-primary-600">Odoo ERP</button>
+                    <button onclick="switchConfigTab('erpnext')" id="tab-cfg-erpnext" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">ERPNext</button>
+                    <button onclick="switchConfigTab('woo')" id="tab-cfg-woo" class="pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">WooCommerce</button>
+                </div>
+                <div class="bg-white border border-t-0 border-slate-200 rounded-b-xl shadow-sm p-6 min-h-[300px]">
+                    <div id="cfg-content-odoo" class="block space-y-5">
+                        <div class="flex justify-between items-center bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                            <div class="flex items-center gap-4"><div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm"><img src="https://upload.wikimedia.org/wikipedia/commons/2/23/Odoo_logo.png" class="w-8 object-contain"></div><div><h3 class="font-bold text-slate-900">Odoo 18/19 CE (API XML-RPC)</h3><p class="text-xs text-slate-500">Status: <span class="text-emerald-500 font-bold">Terhubung & Sinkron</span></p></div></div>
+                            <button class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors">Putuskan</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-bold text-slate-700 mb-1">Host URL</label><input type="text" value="https://erp.sjgtravel.com" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50" readonly></div>
+                            <div><label class="block text-xs font-bold text-slate-700 mb-1">Database Name</label><input type="text" value="sjg_prod_db" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50" readonly></div>
+                        </div>
+                    </div>
+                    <div id="cfg-content-erpnext" class="hidden text-center py-10 text-slate-500"><i class="fas fa-plug text-4xl mb-3 text-slate-300"></i><h3 class="text-lg font-bold text-slate-800">Konfigurasi ERPNext</h3></div>
+                    <div id="cfg-content-woo" class="hidden text-center py-10 text-slate-500"><i class="fab fa-wordpress text-4xl mb-3 text-slate-300"></i><h3 class="text-lg font-bold text-slate-800">WooCommerce Webhook</h3></div>
+                </div>
+            </div>
+
+            <!-- PENGATURAN -> PLUGIN -->
+            <div id="page-set-plugin" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Plugin & Add-ons</h1><p class="text-sm text-slate-500 mt-1">Perluas kemampuan ByteTrip.</p></div></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div><div class="w-12 h-12 bg-slate-800 rounded-lg mb-3 flex items-center justify-center font-bold text-white">n8n</div><h3 class="font-bold text-slate-900">n8n Automation</h3><p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Otomasi notifikasi dan scraping harga hotel.</p></div>
+                        <div class="mt-4 flex justify-between items-center"><span class="text-xs font-bold text-emerald-500"><i class="fas fa-check-circle"></i> Terpasang</span></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div><div class="w-12 h-12 bg-emerald-100 rounded-lg mb-3 flex items-center justify-center font-bold text-emerald-600"><i class="fab fa-whatsapp text-2xl"></i></div><h3 class="font-bold text-slate-900">WhatsApp Gateway</h3><p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Kirim tagihan otomatis via WA.</p></div>
+                        <div class="mt-4 flex justify-between items-center"><span class="text-xs font-bold text-emerald-500"><i class="fas fa-check-circle"></i> Terpasang</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFORMASI -->
+            <div id="page-info-dok" class="page-content w-full mx-auto text-center py-20 text-slate-500 relative"><i class="fas fa-book-open text-4xl mb-4 text-slate-300"></i><h2 class="text-xl font-bold text-slate-800">Dokumentasi API & Manual</h2></div>
+            <div id="page-info-support" class="page-content w-full mx-auto text-center py-20 text-slate-500 relative"><i class="fas fa-headset text-4xl mb-4 text-slate-300"></i><h2 class="text-xl font-bold text-slate-800">Dukungan Teknis IT</h2><p>Buka tiket bantuan ke tim GrintByte.</p></div>
+            <div id="page-info-feedback" class="page-content w-full mx-auto text-center py-20 text-slate-500 relative"><i class="fas fa-comment-dots text-4xl mb-4 text-slate-300"></i><h2 class="text-xl font-bold text-slate-800">Kirim Feedback</h2></div>
+
+            <!-- AKUN -> PROFIL & LISENSI -->
+            <div id="page-akun-profil" class="page-content w-full mx-auto relative">
+                <div class="flex justify-between items-end mb-6"><div><h1 class="text-2xl font-bold text-slate-900">Profil & Lisensi SaaS</h1><p class="text-sm text-slate-500 mt-1">Biodata administrator dan informasi langganan ByteTrip Core.</p></div></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                        <h3 class="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Biodata Admin</h3>
+                        <div class="flex items-center gap-4 mb-6">
+                            <img src="https://placehold.co/100x100/10b981/ffffff?text=AD" class="w-16 h-16 rounded-xl border border-slate-200">
+                            <div><p class="font-bold text-slate-900 text-lg">H. Mursito</p><p class="text-sm text-slate-500">Super Administrator</p></div>
+                        </div>
+                        <div class="space-y-4">
+                            <div><label class="block text-xs font-bold text-slate-500">Email</label><p class="text-sm font-medium text-slate-800">mursito@sjgtravel.com</p></div>
+                            <div><label class="block text-xs font-bold text-slate-500">No. HP / WA</label><p class="text-sm font-medium text-slate-800">+62 812 3456 7890</p></div>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+                        <div class="absolute -right-6 -top-6 text-slate-700 opacity-50"><i class="fas fa-certificate text-9xl"></i></div>
+                        <h3 class="font-bold text-slate-300 mb-4 border-b border-slate-600 pb-2 relative z-10">Informasi Lisensi SaaS</h3>
+                        <div class="space-y-4 relative z-10">
+                            <div><p class="text-xs font-bold text-slate-400">Paket Langganan</p><p class="text-lg font-black text-primary-400">ByteTrip Enterprise - Odoo Hybrid</p></div>
+                            <div><p class="text-xs font-bold text-slate-400">Status Modul Ekstra</p><p class="text-sm font-bold text-white"><i class="fas fa-check-circle text-emerald-400"></i> ByteTrip Masar (Aktif) <br><i class="fas fa-check-circle text-emerald-400 mt-1"></i> ByteTrip Compass (Aktif)</p></div>
+                            <div class="pt-4 mt-4 border-t border-slate-600"><p class="text-xs text-slate-400">Powered by <b>GrintByte Studio</b></p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- /Page Content Container -->
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- SLIDE DRAWERS PLACED AT ROOT LEVEL TO PREVENT CSS TRANSFORM BUGS          -->
+    <!-- ========================================================================= -->
+    
+    <!-- 0. DRAWER: PESANAN PEMBELIAN (PO) -->
+    <div id="drawer-po-overlay" class="fixed inset-0 bg-slate-900/60 z-40 hidden opacity-0 transition-opacity duration-300" onclick="toggleDrawer('drawer-po', false)"></div>
+    <div id="drawer-po" class="fixed top-0 right-0 h-full w-full md:w-[75%] bg-white z-50 transform translate-x-full transition-transform duration-300 shadow-2xl flex flex-col">
+        <div class="px-8 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
+            <div>
+                <h3 class="font-bold text-slate-800 text-xl">Buat Pesanan Pembelian (PO)</h3>
+                <p class="text-xs text-slate-500 mt-1">Transaksi pengadaan tiket, hotel, atau koper ke Vendor.</p>
+            </div>
+            <button onclick="toggleDrawer('drawer-po', false)" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 hover:text-slate-800 transition-colors"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="p-8 overflow-y-auto flex-1 bg-white">
+            <div class="w-full space-y-6">
+                <!-- Header PO -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Pilih Vendor / Suplier</label>
+                        <select class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none bg-white transition-colors">
+                            <option>PT Garuda Indonesia</option>
+                            <option>PT Koper Jaya</option>
+                            <option>Pullman Zamzam Makkah</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Tanggal Pesanan</label>
+                        <input type="date" value="2026-10-15" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none transition-colors">
+                    </div>
+                </div>
+
+                <hr class="border-slate-100 my-4">
+                
+                <!-- Line Items (Multiple Items) -->
+                <div>
+                    <div class="flex justify-between items-end mb-3">
+                        <h4 class="font-bold text-slate-800">Daftar Barang / Jasa (Line Items)</h4>
+                    </div>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-sm text-slate-600" id="po-table">
+                            <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-4 py-3 w-1/2">Pilih Item (Master)</th>
+                                    <th class="px-4 py-3 w-24 text-center">Qty</th>
+                                    <th class="px-4 py-3 w-40 text-right">Harga Satuan (Rp)</th>
+                                    <th class="px-4 py-3 w-40 text-right">Subtotal (Rp)</th>
+                                    <th class="px-4 py-3 w-16 text-center"><i class="fas fa-trash"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100" id="po-table-body">
+                                <tr>
+                                    <td class="px-4 py-3">
+                                        <select class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm outline-none bg-white">
+                                            <option>Tiket CGK-JED PP Economy (TKT-001)</option>
+                                            <option>Koper Fiber 20 Inch (INV-001)</option>
+                                        </select>
+                                    </td>
+                                    <td class="px-4 py-3"><input type="number" value="50" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center outline-none"></td>
+                                    <td class="px-4 py-3"><input type="text" value="13.000.000" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-right outline-none"></td>
+                                    <td class="px-4 py-3 text-right font-bold text-slate-800">650.000.000</td>
+                                    <td class="px-4 py-3 text-center"><button class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="p-3 bg-slate-50 border-t border-slate-200">
+                            <button onclick="addPORow()" class="text-primary-600 hover:text-primary-700 text-sm font-bold flex items-center gap-1"><i class="fas fa-plus-circle"></i> Tambah Baris Item</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Totals -->
+                <div class="flex justify-end mt-4">
+                    <div class="w-64 space-y-2">
+                        <div class="flex justify-between text-sm text-slate-500"><span>Subtotal:</span><span>Rp 650.000.000</span></div>
+                        <div class="flex justify-between text-sm text-slate-500"><span>Pajak (0%):</span><span>Rp 0</span></div>
+                        <div class="flex justify-between text-lg font-black text-slate-800 pt-2 border-t border-slate-200"><span>TOTAL:</span><span class="text-primary-600">Rp 650.000.000</span></div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <div class="px-8 py-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 shrink-0">
+            <button onclick="toggleDrawer('drawer-po', false)" class="px-6 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Batal</button>
+            <button class="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-100 shadow-sm transition-colors">Simpan Draft (RFQ)</button>
+            <button class="px-6 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 shadow-md transition-colors">Konfirmasi Order (PO)</button>
+        </div>
+    </div>
+
+    <!-- 1. DRAWER: BARANG / JASA -->
+    <div id="drawer-barang-overlay" class="fixed inset-0 bg-slate-900/60 z-40 hidden opacity-0 transition-opacity duration-300" onclick="toggleDrawer('drawer-barang', false)"></div>
+    <div id="drawer-barang" class="fixed top-0 right-0 h-full w-full md:w-[75%] bg-white z-50 transform translate-x-full transition-transform duration-300 shadow-2xl flex flex-col">
+        <div class="px-8 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
+            <div>
+                <h3 class="font-bold text-slate-800 text-xl">Form Master Barang / Jasa</h3>
+                <p class="text-xs text-slate-500 mt-1">Tambah atau perbarui data master (bukan transaksi).</p>
+            </div>
+            <button onclick="toggleDrawer('drawer-barang', false)" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 hover:text-slate-800 transition-colors"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="p-8 overflow-y-auto flex-1 bg-white">
+            <div class="max-w-4xl space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Kode (SKU)</label>
+                        <input type="text" placeholder="Kosongkan untuk Auto-Generate" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none bg-slate-50 focus:bg-white transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Kategori</label>
+                        <select class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none bg-white transition-colors">
+                            <option>Perlengkapan</option>
+                            <option>Layanan / Jasa</option>
+                            <option>Akomodasi</option>
+                            <option>Transportasi / Maskapai</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Nama Item</label>
+                    <input type="text" placeholder="Masukkan nama barang/jasa..." class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none transition-colors">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Suplier Default</label>
+                        <select class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none bg-white transition-colors">
+                            <option>Pilih Suplier (Opsional)...</option>
+                            <option>PT Koper Jaya</option>
+                            <option>PT Garuda Indonesia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Status Item</label>
+                        <select class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none bg-white transition-colors">
+                            <option>Aktif (Bisa dibeli)</option>
+                            <option>Non-Aktif (Arsip)</option>
+                        </select>
+                    </div>
+                </div>
+                <hr class="border-slate-100 my-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Harga Dasar / Acuan</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rp</span>
+                            <input type="number" class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl text-sm focus:border-primary-500 outline-none transition-colors">
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Acuan untuk form PO nanti.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="px-8 py-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 shrink-0">
+            <button onclick="toggleDrawer('drawer-barang', false)" class="px-6 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Batal</button>
+            <button class="px-6 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 shadow-md transition-colors">Simpan Master Barang</button>
+        </div>
+    </div>
+
+    <!-- 2. DRAWER: SUPLIER -->
+    <div id="drawer-suplier-overlay" class="fixed inset-0 bg-slate-900/60 z-40 hidden opacity-0 transition-opacity duration-300" onclick="toggleDrawer('drawer-suplier', false)"></div>
+    <div id="drawer-suplier" class="fixed top-0 right-0 h-full w-full md:w-[75%] bg-white z-50 transform translate-x-full transition-transform duration-300 shadow-2xl flex flex-col">
+        <div class="px-8 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
+            <div>
+                <h3 class="font-bold text-slate-800 text-xl">Form Data Vendor</h3>
+                <p class="text-xs text-slate-500 mt-1">Lengkapi data kontrak dan kontak dari suplier Anda.</p>
+            </div>
+            <button onclick="toggleDrawer('drawer-suplier', false)" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 transition-colors"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="p-8 overflow-y-auto flex-1 bg-white">
+            <div class="max-w-4xl space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Nama Perusahaan / Vendor</label>
+                    <input type="text" placeholder="Misal: PT Garuda Indonesia" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none transition-colors">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Kategori</label>
+                        <select class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none bg-white transition-colors">
+                            <option>Maskapai</option>
+                            <option>Hotel & Akomodasi</option>
+                            <option>Visa & Land Arrangement</option>
+                            <option>Perlengkapan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Status</label>
+                        <select class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none bg-white transition-colors">
+                            <option>Aktif</option>
+                            <option>Non-Aktif / Blacklist</option>
+                        </select>
+                    </div>
+                </div>
+                <hr class="border-slate-100 my-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Nama PIC (Narahubung)</label>
+                        <input type="text" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Telepon / WhatsApp PIC</label>
+                        <input type="text" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Email Perusahaan</label>
+                    <input type="email" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Alamat Lengkap</label>
+                    <textarea class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-primary-500 outline-none transition-colors" rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="px-8 py-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 shrink-0">
+            <button onclick="toggleDrawer('drawer-suplier', false)" class="px-6 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Batal</button>
+            <button class="px-6 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 shadow-md transition-colors">Simpan Vendor</button>
+        </div>
+    </div>
+
+    <!-- 3. DRAWER: KATEGORI SUPLIER -->
+    <div id="drawer-kat-suplier-overlay" class="fixed inset-0 bg-slate-900/60 z-40 hidden opacity-0 transition-opacity duration-300" onclick="toggleDrawer('drawer-kat-suplier', false)"></div>
+    <div id="drawer-kat-suplier" class="fixed top-0 right-0 h-full w-full md:w-[75%] bg-white z-50 transform translate-x-full transition-transform duration-300 shadow-2xl flex flex-col">
+        <div class="px-8 py-5 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
+            <h3 class="font-bold text-slate-800 text-xl">Form Kategori Vendor</h3>
+            <button onclick="toggleDrawer('drawer-kat-suplier', false)" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 transition-colors"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="p-8 overflow-y-auto flex-1 bg-white">
+            <div class="max-w-3xl space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Nama Kategori</label>
+                    <input type="text" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-slate-800 outline-none transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Deskripsi / Catatan Tambahan</label>
+                    <textarea class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-slate-800 outline-none transition-colors" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div class="px-8 py-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 shrink-0">
+            <button onclick="toggleDrawer('drawer-kat-suplier', false)" class="px-6 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-colors">Batal</button>
+            <button class="px-6 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold hover:bg-slate-900 shadow-md transition-colors">Simpan Kategori</button>
+        </div>
+    </div>
+
+    <!-- Script Navigation Web -->
+    <script>
+        let activeNavBtn = null;
+
+        window.onload = () => {
+            const defaultNav = document.querySelector('button[onclick*="switchPage(\'main-dasbor\'"]');
+            activeNavBtn = defaultNav;
+            renderMainDashboardChart();
+        };
+
+        
+        // =====================================
+        // LOGIC MOBILE MENU
+        // =====================================
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('main-sidebar');
+            const overlay = document.getElementById('mobile-sidebar-overlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        // =====================================
+        // LOGIC SLIDE DRAWER
+        // =====================================
+        function toggleDrawer(id, show) {
+            const overlay = document.getElementById(id + '-overlay');
+            const drawer = document.getElementById(id);
+            
+            if (show) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-0');
+                    drawer.classList.remove('translate-x-full');
+                }, 10);
+            } else {
+                overlay.classList.add('opacity-0');
+                drawer.classList.add('translate-x-full');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            }
+        }
+        
+        // Simple function to add row to PO table visually
+        function addPORow() {
+            const tbody = document.getElementById('po-table-body');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="px-4 py-3">
+                    <select class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm outline-none bg-white">
+                        <option>Pilih Item...</option>
+                        <option>Koper Fiber 20 Inch (INV-001)</option>
+                        <option>Kain Ihram Pria (INV-002)</option>
+                    </select>
+                </td>
+                <td class="px-4 py-3"><input type="number" value="1" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center outline-none"></td>
+                <td class="px-4 py-3"><input type="text" placeholder="0" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-right outline-none"></td>
+                <td class="px-4 py-3 text-right font-bold text-slate-800">0</td>
+                <td class="px-4 py-3 text-center"><button onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function toggleSubmenu(id, btnElement) {
+            const submenu = document.getElementById(id);
+            const caret = btnElement.querySelector('.caret');
+            
+            if (submenu.classList.contains('open')) {
+                submenu.classList.remove('open');
+                caret.classList.remove('open');
+            } else {
+                document.querySelectorAll('.submenu').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('.caret').forEach(el => el.classList.remove('open'));
+                
+                submenu.classList.add('open');
+                caret.classList.add('open');
+            }
+        }
+
+        function toggleProfileMenu() {
+            const menu = document.getElementById('akun-popup');
+            menu.classList.toggle('open');
+        }
+
+        function closeProfileMenu(event) {
+            const menu = document.getElementById('akun-popup');
+            if(menu.classList.contains('open') && !event.target.closest('.profile-menu') && !event.target.closest('[onclick="toggleProfileMenu()"]')) {
+                menu.classList.remove('open');
+            }
+        }
+
+        function switchPage(pageId, btnElement) {
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(page => { page.classList.remove('active'); });
+            // Show target
+            document.getElementById('page-' + pageId).classList.add('active');
+
+            // Reset Nav active states
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.submenu-item').forEach(btn => btn.classList.remove('active'));
+
+            if (btnElement && btnElement.classList.contains('submenu-item')) {
+                btnElement.classList.add('active');
+                const parentNav = btnElement.parentElement.previousElementSibling;
+                parentNav.classList.add('active');
+            } else if (btnElement) {
+                btnElement.classList.add('active');
+                if (!btnElement.hasAttribute('onclick') || !btnElement.getAttribute('onclick').includes('toggleSubmenu')) {
+                     document.querySelectorAll('.submenu').forEach(el => el.classList.remove('open'));
+                     document.querySelectorAll('.caret').forEach(el => el.classList.remove('open'));
+                }
+            }
+
+            
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('main-sidebar');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+                    toggleMobileMenu();
+                }
+            }
+            // DYNAMIC BREADCRUMBS
+            const titleMap = {
+                'main-dasbor': 'Main <span class="text-slate-400 mx-1">/</span> Dasbor Utama',
+                'beli-ringkasan': 'Pembelian <span class="text-slate-400 mx-1">/</span> Ringkasan',
+                'beli-po': 'Pembelian <span class="text-slate-400 mx-1">/</span> Pesanan (PO)',
+                'beli-barang': 'Pembelian <span class="text-slate-400 mx-1">/</span> Master Barang & Jasa',
+                'beli-suplier': 'Pembelian <span class="text-slate-400 mx-1">/</span> Vendor & Suplier',
+                'jual-ringkasan': 'Penjualan <span class="text-slate-400 mx-1">/</span> Ringkasan',
+                'jual-produk': 'Penjualan <span class="text-slate-400 mx-1">/</span> Produk & Paket Travel',
+                'jual-agen': 'Penjualan <span class="text-slate-400 mx-1">/</span> Manajemen Agen',
+                'jual-pelanggan': 'Penjualan <span class="text-slate-400 mx-1">/</span> Data Pelanggan (CRM)',
+                'fin-ringkasan': 'Finansial <span class="text-slate-400 mx-1">/</span> Ringkasan',
+                'fin-tagihan': 'Finansial <span class="text-slate-400 mx-1">/</span> Tagihan (Invoicing)',
+                'fin-aruskas': 'Finansial <span class="text-slate-400 mx-1">/</span> Arus Kas',
+                'fin-labarugi': 'Finansial <span class="text-slate-400 mx-1">/</span> Laba Rugi',
+                'fin-neraca': 'Finansial <span class="text-slate-400 mx-1">/</span> Neraca',
+                'masar-doa': 'Masar <span class="text-slate-400 mx-1">/</span> Manajemen Doa',
+                'masar-manasik': 'Masar <span class="text-slate-400 mx-1">/</span> Jadwal Manasik',
+                'set-perusahaan': 'Pengaturan <span class="text-slate-400 mx-1">/</span> Profil Perusahaan',
+                'set-integrasi': 'Pengaturan <span class="text-slate-400 mx-1">/</span> Integrasi Sistem',
+                'set-plugin': 'Pengaturan <span class="text-slate-400 mx-1">/</span> Plugin Ekstra',
+                'info-dok': 'Informasi <span class="text-slate-400 mx-1">/</span> Dokumentasi',
+                'info-support': 'Informasi <span class="text-slate-400 mx-1">/</span> Dukungan Teknis',
+                'info-feedback': 'Informasi <span class="text-slate-400 mx-1">/</span> Feedback',
+                'akun-profil': 'Akun <span class="text-slate-400 mx-1">/</span> Profil & Lisensi'
+            };
+            document.getElementById('topbar-title').innerHTML = titleMap[pageId] || 'ByteTrip Core';
+
+            if(pageId === 'main-dasbor') renderMainDashboardChart();
+            if(pageId === 'beli-ringkasan') renderFlightChart();
+        }
+
+        function switchSuplierTab(tabType) {
+            const tabData = document.getElementById('tab-sup-data');
+            const tabKat = document.getElementById('tab-sup-kategori');
+            const contentData = document.getElementById('content-sup-data');
+            const contentKat = document.getElementById('content-sup-kategori');
+            const btnGrpSup = document.getElementById('btn-group-suplier');
+            const btnGrpKat = document.getElementById('btn-group-kategori');
+
+            if(tabType === 'data') {
+                tabData.className = "pb-3 text-sm font-bold border-b-2 border-primary-500 text-primary-600";
+                tabKat.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800";
+                contentData.classList.replace('hidden', 'block');
+                contentKat.classList.replace('block', 'hidden');
+                btnGrpSup.classList.remove('hidden');
+                btnGrpKat.classList.add('hidden');
+            } else {
+                tabKat.className = "pb-3 text-sm font-bold border-b-2 border-primary-500 text-primary-600";
+                tabData.className = "pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800";
+                contentKat.classList.replace('hidden', 'block');
+                contentData.classList.replace('block', 'hidden');
+                btnGrpKat.classList.remove('hidden');
+                btnGrpSup.classList.add('hidden');
+            }
+        }
+
+        // =====================================
+        // CHART.JS
+        // =====================================
+        let mainChartInstance = null;
+        function renderMainDashboardChart() {
+            const ctx = document.getElementById('mainDashboardChart');
+            if(!ctx || mainChartInstance) return; 
+
+            const context2d = ctx.getContext('2d');
+            let gradSales = context2d.createLinearGradient(0, 0, 0, 300);
+            gradSales.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+            gradSales.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+            let gradCost = context2d.createLinearGradient(0, 0, 0, 300);
+            gradCost.addColorStop(0, 'rgba(239, 68, 68, 0.1)');
+            gradCost.addColorStop(1, 'rgba(239, 68, 68, 0)');
+
+            mainChartInstance = new Chart(context2d, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt'],
+                    datasets: [
+                        {
+                            label: 'Omset Penjualan (Juta Rp)',
+                            data: [350, 420, 410, 580, 850, 780, 920, 890, 1100, 1250],
+                            borderColor: '#10b981', backgroundColor: gradSales, borderWidth: 3, fill: true, tension: 0.4,
+                            pointBackgroundColor: '#fff', pointBorderColor: '#10b981', pointBorderWidth: 2, pointRadius: 4
+                        },
+                        {
+                            label: 'HPP / Biaya Beli (Juta Rp)',
+                            data: [250, 300, 310, 400, 600, 520, 680, 620, 750, 800],
+                            borderColor: '#ef4444', backgroundColor: gradCost, borderWidth: 2, fill: true, tension: 0.4,
+                            borderDash: [5, 5], pointRadius: 0
+                        }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+            });
+        }
+
+        let flightChartInstance = null;
+        function renderFlightChart() {
+            const ctx = document.getElementById('priceFlightChart');
+            if(!ctx || flightChartInstance) return; 
+
+            const context2d = ctx.getContext('2d');
+            let gradSaudia = context2d.createLinearGradient(0, 0, 0, 300);
+            gradSaudia.addColorStop(0, 'rgba(5, 150, 105, 0.2)'); gradSaudia.addColorStop(1, 'rgba(5, 150, 105, 0)');
+
+            let gradGaruda = context2d.createLinearGradient(0, 0, 0, 300);
+            gradGaruda.addColorStop(0, 'rgba(59, 130, 246, 0.2)'); gradGaruda.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+            flightChartInstance = new Chart(context2d, {
+                type: 'line',
+                data: {
+                    labels: ['1 Okt', '5 Okt', '10 Okt', '15 Okt', '20 Okt', '25 Okt', '30 Okt', '4 Nov (AI)', '9 Nov (AI)'],
+                    datasets: [
+                        { label: 'Saudia Airlines ($)', data: [980, 975, 990, 1050, 1030, 1010, 990, 880, 850], borderColor: '#059669', backgroundColor: gradSaudia, borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#fff', pointBorderColor: '#059669', pointBorderWidth: 2, pointRadius: 4 },
+                        { label: 'Garuda Indonesia ($)', data: [1050, 1060, 1040, 1100, 1090, 1080, 1050, 1000, 980], borderColor: '#3b82f6', backgroundColor: gradGaruda, borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#fff', pointBorderColor: '#3b82f6', pointBorderWidth: 2, pointRadius: 4 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 12, titleFont: { size: 13 }, bodyFont: { size: 14, weight: 'bold' } } }, scales: { y: { beginAtZero: false, min: 700, max: 1200, grid: { color: '#f1f5f9' }, ticks: { callback: function(value) { return '$' + value; } } }, x: { grid: { display: false } } } }
+            });
+        }
+    </script>
+</body>
+</html>
